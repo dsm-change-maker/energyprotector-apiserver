@@ -9,7 +9,6 @@ class Device(db.Model):
     device_type = db.Column(db.String(64), nullable=False)
     onoff = db.Column(db.Boolean(), default=False)
     start = db.Column(db.DateTime())
-    end = db.Column(db.DateTime())
     moter_count = db.Column(db.Integer)
     pi_key = db.Column(db.Integer, db.ForeignKey(
         'raspberry.key', ondelete="CASCADE"),)
