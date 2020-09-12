@@ -1,8 +1,8 @@
-from application import db
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
+from application import db
 
 class Device(db.Model):
     device_id = db.Column(db.String(64), primary_key=True)
