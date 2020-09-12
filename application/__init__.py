@@ -1,6 +1,7 @@
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
+from flask_jwt_extended import JWTManager
 import os
 import sys
 
@@ -10,7 +11,7 @@ import config
 
 db = SQLAlchemy()
 migrate = Migrate()
-
+jwt = JWTManager
 
 
 def create_app():
