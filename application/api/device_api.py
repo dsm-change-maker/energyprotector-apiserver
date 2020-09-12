@@ -25,7 +25,7 @@ def show_device(device_id):
 @bp.route('/api/device/', methods=['POST'])
 def post_device():
     data = request.json
-    device = Device(device_id=data['device_id'], device_type=data['device_type'],
+    device = Device(device_id=data['device_id'], device_type=data['device_type'],rl
                     moter_count=data['moter_count'], pi_key=1)
 
     db.session.add(device)
