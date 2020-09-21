@@ -22,8 +22,10 @@ def create_app():
 
     from .api import device_api
     from .api import raspberry_api
+    from .api import web_api
     app.register_blueprint(device_api.bp)
     app.register_blueprint(raspberry_api.bp)
+    app.register_blueprint(web_api.bp)
 
     db.init_app(app)
     migrate.init_app(app, db)

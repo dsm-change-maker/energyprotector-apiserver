@@ -13,6 +13,13 @@ class Device(db.Model):
     ip = db.Column(db.String(32))
     rasp_key = db.Column(db.Integer, db.ForeignKey('raspberry.key'))
 
+    def to_dict(self):
+        return {
+            "device_id" : self.id,
+            "device_type" : self.type,
+            "unit_count" : self.unit_count
+        }
+
 
 class Raspberry(db.Model):
     key = db.Column(db.Integer, primary_key=True)
@@ -25,12 +32,18 @@ class Raspberry(db.Model):
 class Unit(db.Model):
     key = db.Column(db.Integer, primary_key=True)
     index = db.Column(db.Integer, nullable=False)
-    device_id = db.Column(db.String(64), db.ForeignKey('device.id'))
+    device_key = db.Column(db.Integer, db.ForeignKey('device.key'))
     on_off = db.Column(db.Boolean, default=False)
     start = db.Column(db.DateTime())
+
+    def to_dict(self):
+        return {
+            "index" : self.index,
+            "on_off" : self.on_off
+        }
 
 class UsingTime(db.Model):
     key = db.Column(db.Integer, primary_key=True)
     rasp_key = db.Column(db.Integer, db.ForeignKey('raspberry.key'))
-    date = db.Column(db.DateTime())
+    date = db.Column(db.String)
     time = db.Column(db.Integer)

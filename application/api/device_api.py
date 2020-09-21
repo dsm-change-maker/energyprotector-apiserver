@@ -18,18 +18,11 @@ bp = Blueprint('device', __name__)
 @jwt_required
 def view_device(device_id):
     device = Device.query.filter_by(id=device_id, rasp_key=get_jwt_identity()).first()
-    print("id {}, 보낸 id {}".format(device.id, device_id))
     if device is None:
-        return {'message': "디바이스 정보가 없습니다.", 'data': {}}, 404
+        return {'message': "디바이스 정보가 없습니다."}, 404
     units = Unit.query.filter_by(device_key=device.key).all()
-    on_off = ''
-    for unit in units:
-        if unit.on_off:
-            on_off += '1;'
-        else:
-            on_off += '0;'
 
-    return {'message': '', 'data': {'device_type': device.type, 'device_ip': device.ip, 'unit_count': device.unit_count, 'on_off': on_off}}, 200
+    return {"device_type":device.type, "device_ip":device.ip, "unit_count":device.unit_count, "units" : [u.to_dict() for u in units]}, 200
 
 
 @bp.route('/api/device', methods=['POST'])
@@ -38,10 +31,11 @@ def post_device():
     data = request.json
     device = Device(id=data['device_id'], type=data['device_type'],
                     unit_count=data['unit_count'], ip=data['device_ip'], rasp_key=get_jwt_identity())
-    for i in range (0, data['unit_count']):
-        unit = Unit(index=i, device_id=data['device_id'])
-        db.session.add(unit)
     db.session.add(device)
+    db.session.commit()                
+    for i in range (0, data['unit_count']):
+        unit = Unit(index=i, device_key=device.key)
+        db.session.add(unit)
     db.session.commit()
     return {'message': '디바이스 정보가 등록되었습니다.', 'data': {}}, 200
 
@@ -55,7 +49,6 @@ def modify_device():
         return {'message': '수정할 디바이스 정보를 찾을 수 없습니다', 'data': {}}, 404
 
     device.device_type = data['device_type']
-    device.unit_count = data['unit_count']
     device.device_ip = data['device_ip']
 
     db.session.commit()
@@ -85,13 +78,13 @@ def control_device(unit_index):
     if device is None:
         return {"message":"컨트롤할 디바이스 정보를 찾을 수 없습니다."}, 404
 
-    unit = Unit.query.filter_by(device_id=device.id, index=unit_index).first()
+    unit = Unit.query.filter_by(device_key=device.key, index=unit_index).first()
     if unit is None:
         return {"message":"컨트롤할 디바이스 정보를 찾을 수 없습니다."}, 404
     
       
-    if not raspberry.remote_control:
-        return {"message":"디바이스를 컨트롤 할 수 없습니다.", "data":{}}, 401
+    if not Raspberry.query.get(get_jwt_identity()).remote_control:
+        return {"message":"디바이스를 컨트롤 할 수 없습니다."}, 401
 
 
     if data['on_off']:
