@@ -85,7 +85,7 @@ def control_device():
     json = request.json
     raspberry = Raspberry.query.get(get_jwt_identity())
     devices = raspberry.devices.split(',')
-    for device in devices:
+    for device in devices[:-1]:
         device_info = devices.split(';')
         if device_info[0] != json['device_id'] or device_info[1] != json['device_type']:
             return {'message': '삭제할 디바이스 정보를 찾을 수 없습니다.'}, 404
@@ -109,7 +109,11 @@ def control_device():
         unit.on_off = False
         time = datetime.datetime.now() - unit.start
         using = UsingTime.query.filter_by(
-            date=str(datetime.date.today()), key=get_jwt_identity).first()
+            date=str(datetime.date.today()), key=get_jwt_identity()).first()
+        if using in None:
+            using = UsingTime(key=get_jwt_identity(), time=0,
+                              date=str(datetime.date.today()))
+            db.session.add(using)
         using.time += time.seconds
         db.session.commit()
         return {'message': '디바이스를 성공적으로 제어했습니다.'}, 200

@@ -1,3 +1,4 @@
+import config
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
@@ -5,8 +6,8 @@ from flask import Flask
 import threading
 import os
 import sys
+from flask_cors import CORS
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-import config
 
 
 db = SQLAlchemy()
@@ -26,7 +27,7 @@ def create_app():
     app.register_blueprint(device_api.bp)
     app.register_blueprint(raspberry_api.bp)
     app.register_blueprint(web_api.bp)
-
+    CORS(app)
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
