@@ -5,7 +5,7 @@ from flask_jwt_extended import (
     jwt_required,
 )
 from application import db, jwt
-from application.models import Device, Raspberry, Unit, UsingTime
+from application.models import Device, Raspberry, Unit, UsingTimeDay, UsingTimeMonth, UsingTimeYear
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(
@@ -86,34 +86,48 @@ def control_device():
     raspberry = Raspberry.query.get(get_jwt_identity())
     devices = raspberry.devices.split(',')
     for device in devices[:-1]:
-        device_info = devices.split(';')
-        if device_info[0] != json['device_id'] or device_info[1] != json['device_type']:
-            return {'message': '삭제할 디바이스 정보를 찾을 수 없습니다.'}, 404
-    device = Device.query.filter_by(
-        id=json['device_id'], type=json['device_type']).first()
+        device_info = device.split(';')
+        if device_info[0] == json['device_id'] and device_info[1] == json['device_type']:
+            device = Device.query.filter_by(
+                id=json['device_id'], type=json['device_type']).first()
+            unit = Unit.query.filter_by(
+                device_key=device.key, index=json['unit_index']).first()
+            if unit is None:
+                return {"message": "컨트롤할 디바이스 정보를 찾을 수 없습니다."}, 404
+            if not Raspberry.query.get(get_jwt_identity()).remote_control:
+                return {"message": "접근 권한이 없습니다."}, 401
 
-    unit = Unit.query.filter_by(
-        device_key=device.key, index=json['unit_index']).first()
-    if unit is None:
-        return {"message": "컨트롤할 디바이스 정보를 찾을 수 없습니다."}, 404
+            if data['on_off']:
+                unit.on_off = True
+                unit.start = datetime.datetime.now()
+                db.session.commit()
+                return {'message': '디바이스를 성공적으로 제어했습니다.'}, 200
+            else:
+                today = datetime.date.today()
+                key = get_jwt_identity()
+                unit.on_off = False
+                time = datetime.datetime.now() - unit.start
+                using_day = UsingTimeDay.query.filter_by(
+                    date=today.strftime('%Y-%m-%d')., key=get_jwt_identity()).first()
+                if using_day is None:
+                    using_day = UsingTimeDay(key=key, time=0,
+                                             date=today.strftime('%Y-%m-%d'))
+                    db.session.add(using_day)
+                using_month = UsingTimeMonth.query.filter_by(
+                    date=today.strftime('%Y-%m'), key=key).first()
+                if using_month is None:
+                    using_month = UsingTimeMonth(key=key, time=0,
+                                                 date=today.strftime('%Y-%m'))
+                    db.session.add(using_month)
+                using_year = UsingTimeYear.query.filter(
+                    date=today.strftime('%Y'), key=key).first()
+                if using_year is None:
+                    using_year = UsingTimeYear(key=key, time=0,
+                                               date=today.strftime('%Y'))
+                    db.session.add(using_year)
+                using_day.time += time.seconds
+                using_month.time += time.seconds
+                using_year.time += time.seconds
 
-    if not Raspberry.query.get(get_jwt_identity()).remote_control:
-        return {"message": "접근 권한이 없습니다."}, 401
-
-    if data['on_off']:
-        unit.on_off = True
-        unit.start = datetime.datetime.now()
-        db.session.commit()
-        return {'message': '디바이스를 성공적으로 제어했습니다.'}, 200
-    else:
-        unit.on_off = False
-        time = datetime.datetime.now() - unit.start
-        using = UsingTime.query.filter_by(
-            date=str(datetime.date.today()), key=get_jwt_identity()).first()
-        if using in None:
-            using = UsingTime(key=get_jwt_identity(), time=0,
-                              date=str(datetime.date.today()))
-            db.session.add(using)
-        using.time += time.seconds
-        db.session.commit()
-        return {'message': '디바이스를 성공적으로 제어했습니다.'}, 200
+                db.session.commit()
+                return {'message': '디바이스를 성공적으로 제어했습니다.'}, 200

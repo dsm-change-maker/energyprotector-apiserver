@@ -27,6 +27,7 @@ class Raspberry(db.Model):
     id = db.Column(db.String(64), nullable=False)
     pw = db.Column(db.String(64), nullable=False)
     remote_control = db.Column(db.Boolean, default=True)
+    start_date = db.Column(db.String(32))
     devices = db.Column(db.Text)
 
 
@@ -44,7 +45,17 @@ class Unit(db.Model):
         }
 
 
-class UsingTime(db.Model):
+class UsingTimeDay(db.Model):
     key = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.String)
+    date = db.Column(db.String(32))
+    time = db.Column(db.Integer)
+
+class UsingTimeMonth(db.Model):
+    key = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.String(32))
+    time = db.Column(db.Integer)
+
+class UsingTimeYear(db.Model):
+    key = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.String(32))
     time = db.Column(db.Integer)

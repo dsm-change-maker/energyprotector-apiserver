@@ -1,7 +1,7 @@
 import datetime
 from flask import Blueprint, request
 from application import db, jwt
-from application.models import Device, Raspberry, Unit, UsingTime
+from application.models import Device, Raspberry, Unit, UsingTimeDay, UsingTimeMonth, UsingTimeYear
 from flask_jwt_extended import(
     jwt_required,
     create_access_token,
@@ -52,15 +52,11 @@ def post_raspberry():
     devices = ''
     for device_info in json['devices']:
         devices += device_info['device_id'] + ';'
-        devices += device_info['device_ip'] + ','
+        devices += device_info['device_type'] + ','
 
     rasp = Raspberry(group=json['raspberry_group'], id=json['raspberry_id'],
-                     pw=json['raspberry_pw'], remote_control=json['remote_control'], devices=devices)
+                     pw=json['raspberry_pw'], remote_control=json['remote_control'], devices=devices. start_date=str(datetime.date.today()))
     db.session.add(rasp)
-    db.session.commit()
-    using = UsingTime(key=rasp.key, time=0,
-                      date=str(datetime.date.today()))
-    db.session.add(using)
     db.session.commit()
 
     return {"message": "라즈베리파이 정보가 등록되었습니다"}, 201
