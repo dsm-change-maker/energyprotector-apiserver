@@ -8,7 +8,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, request, jsonify
 from application import db, jwt
-from application.models import Device, Raspberry, Unit, UsingTime
+from application.models import Device, Raspberry, Unit, UsingTimeDay, UsingTimeMonth, UsingTimeYear
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(
@@ -36,38 +36,64 @@ def view_devices():
     rasp = Raspberry.query.get(get_jwt_identity())
     devices = rasp.devices.split(',')
     devices_info = []
+    
     for device in devices[:-1]:
         device_info = device.split(';')
         device = Device.query.filter_by(
             id=device_info[0], type=device_info[1]).first()
-        devices_info.append({"device_id": device.id, "device_type": device.type, "unit_count": device.unit_count})
+            units_info = []
+        for unit in Unit.query.filter_by(device_key=device.key).all():
+            units_info.append(unit.on_off)
+        devices_info.append(
+            {"device_id": device.id, "device_type": device.type, "unit_count": device.unit_count, "unit_info": units_info})
     return {"devices": devices_info}, 200
 
 
-@bp.route('/api/web/units', methods=['GET'])
-@jwt_required
-def view_units(device_id):
+@bp.route('/api/web/using-time', methods=['GET'])
+def using_time():
     parameters = request.args
-    rasp = Raspberry.query.get(get_jwt_identity())
-    devices = rasp.devices.split(',')
-    for device in devices[:-1]:
-        device_info = devices.split(';')
-        if device_info[0] == parameters['device_id'] and device_info[1] == parameters['device_type']:
-            units = Unit.query.filter_by(
-                device_key=parameters['device_id']).all()
-            return {"units": [u.to_dict() for u in units]}, 200
-    return {"message": "잘못된 요청입니다."}, 400
+    rasp = Raspberry.query.filter_by(
+        group=parameters['raspberry_group'], id=parameters['raspberry_id']).first()
+    this_date = datetime.date.today()
+    rasp_date = datetime.datetime.strptime(rasp.start_date, "%Y-%m-%d").date()
+    if parameters['year']:
+        year = []
+        start_date = this_date - relativedelta(years=parameters['year_n'])
+        if start_date < rasp_date:
+            start_date = rasp_date
+            while start_date <= this_date:
+                year.append(start_date.strftime('%Y'), UsingTimeYear.query.filter_by(key=rasp.key, date=start_date.strftime('%Y')).first().time])
+                start_date= start_date + relativedelta(years=1)
+        else:
+            while start_date <= this_date:
+                year.append(start_date.strftime('%Y'), UsingTimeYear.query.filter_by(key=rasp.key, date=start_date.strftime('%Y')).first().time])
+                start_date= start_date + relativedelta(years=1)
+        return {"year": year}, 200
 
-# @bp.route('/api/web/using-time', methods=['GET'])
-# def using_time():
-#     parameters = request.args
-#     rasp = Raspberry.query.filter_by(group=parameters['raspberry_group'], id=parameters['raspberry_id']).first()
-#     using_time = UsingTime.query.get(rasp.key)
-#     if parameters['year']:
-#         today_date = datetime.date.today()
-#         start_date = today_date - relativedelta(years=parameters['year_n'])
+    elif parameters['month']:
+        month = []
+        start_date= this_date - relativedelta(months=parameters['month_n'])
+        if start_date < rasp_date:
+            start_date= rasp_date
+            while start_date <= this_date:
+                year.append(start_date.strftime('%Y-%m'), UsingTimeMonth.query.filter_by(key=rasp.key, date=start_date.strftime('%Y-%m')).first().time])
+                start_date= start_date + relativedelta(months=1)
+        else:
+            while start_date <= this_date:
+                year.append(start_date.strftime('%Y-%m'), UsingTimeMonth.query.filter_by(key=rasp.key, date=start_date.strftime('%Y-%m')).first().time])
+                start_date= start_date + relativedelta(months=1)
+        return {"month": month}, 200
 
-#     elif parameters['month']:
-#         today_date = datetime.date.today()
-        
-#     else:
+    else:
+        day = []
+        start_date= this_date - relativedelta(days=parameters['day_n'])
+        if start_date < rasp_date:
+            start_date= rasp_date
+            while start_date <= this_date:
+                year.append(start_date.strftime('%Y-%m-%d'), UsingTimeDay.query.filter_by(key=rasp.key, date=start_date.strftime('%Y-%m-%d')).first().time])
+                start_date= start_date + relativedelta(days=1)
+        else:
+            while start_date <= this_date:
+                year.append(start_date.strftime('%Y-%m-%d'), UsingTimeDay.query.filter_by(key=rasp.key, date=start_date.strftime('%Y-%m-%d')).first().time])
+                start_date= start_date + relativedelta(days=1)
+        return {"day": day}, 200
