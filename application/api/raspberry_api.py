@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(
     os.path.abspath(os.path.dirname(__file__)))))
 
 
-access_token_exdelta = datetime.timedelta(hours=10)
+access_token_exdelta = datetime.timedelta(days=30)
 
 bp = Blueprint('raspberry', __name__)
 
@@ -37,8 +37,12 @@ def view_raspberry():
     devices_array = []
     for device in devices:
         device_info = device.split(';')
-        devices_array.append(
-            {"device_id": device_info[0], "device_ip": device_info[1]})
+        device_ip = Device.query.filter_by(id=device_info[0], type=device_info[1]).first().ip
+        try:
+            devices_array.append(
+                {"device_id": device_info[0], "device_ip": device_info[1]})
+        except:
+            pass
 
     return {'remote_control': raspberry.remote_control, 'raspberry_devices': devices_array}, 200
 
@@ -46,7 +50,7 @@ def view_raspberry():
 @bp.route('/api/raspberry', methods=['POST'])
 def post_raspberry():
     json = request.json
-    if Raspberry.query.filter_by(group=json['raspberry_group'], id=json['raspberry_id']).first():
+    if Raspberry.query.filter_by(group=json['raspberry_group'], id=json['raspberry_id']).first() is not None:
         return {"message": "같은 이름의 라즈베리파이가 존재합니다."}, 400
 
     devices = ''
@@ -54,8 +58,9 @@ def post_raspberry():
         devices += device_info['device_id'] + ';'
         devices += device_info['device_type'] + ','
 
+    print("check")
     rasp = Raspberry(group=json['raspberry_group'], id=json['raspberry_id'],
-                     pw=json['raspberry_pw'], remote_control=json['remote_control'], devices=devices. start_date=str(datetime.date.today()))
+                     pw=json['raspberry_pw'], remote_control=json['remote_control'], devices=devices, start_date=str(datetime.date.today()))
     db.session.add(rasp)
     db.session.commit()
 
@@ -84,16 +89,26 @@ def delete_raspberry():
     if rasp is None:
         return {"message": "삭제할 라즈베리파이 정보가 없습니다."}, 404
 
-    using_time = UsingTime.query.get(get_jwt_identity())
-    db.session.delete(using_time)
+    using_time_days = UsingTimeDay.query.filter_by(rasp_key=get_jwt_identity()).all()
+    using_time_months = UsingTimeMonth.query.filter_by(rasp_key=get_jwt_identity()).all()
+    using_time_years = UsingTimeYear.query.filter_by(rasp_key=get_jwt_identity()).all()   
+    for using_time_day in using_time_days:
+        db.session.delete(using_time_day)
+    for using_time_month in using_time_months:
+        db.session.delete(using_time_month)
+    for using_time_year in using_time_years:
+        db.session.delete(using_time_year)
 
     devices_info = rasp.devices.split(',')
     for device_info in devices_info[:-1]:
         device = Device.query.filter_by(
             id=device_info[0], type=device_info[1]).first()
-        for unit in Unit.query.filter_by(device_key=device.key).all():
-            db.session.delete(unit)
-        db.session.delete(device)
+        try:
+            for unit in Unit.query.filter_by(device_key=device.key).all():
+                db.session.delete(unit)
+            db.session.delete(device)
+        except:
+            pass
 
     db.session.delete(rasp)
     db.session.commit()
