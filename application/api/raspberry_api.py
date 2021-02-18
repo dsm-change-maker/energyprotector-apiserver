@@ -89,9 +89,9 @@ def delete_raspberry():
     if rasp is None:
         return {"message": "삭제할 라즈베리파이 정보가 없습니다."}, 404
 
-    using_time_days = UsingTimeDay.query.filter_by(rasp_key=get_jwt_identity()).all()
-    using_time_months = UsingTimeMonth.query.filter_by(rasp_key=get_jwt_identity()).all()
-    using_time_years = UsingTimeYear.query.filter_by(rasp_key=get_jwt_identity()).all()   
+    using_time_days = UsingTimeDay.query.filter_by(key=get_jwt_identity()).all()
+    using_time_months = UsingTimeMonth.query.filter_by(key=get_jwt_identity()).all()
+    using_time_years = UsingTimeYear.query.filter_by(key=get_jwt_identity()).all()   
     for using_time_day in using_time_days:
         db.session.delete(using_time_day)
     for using_time_month in using_time_months:

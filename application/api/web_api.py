@@ -60,11 +60,11 @@ def using_time():
         if start_date < rasp_date:
             start_date = rasp_date
             while start_date <= this_date:
-                year.append([start_date.strftime('%Y'), UsingTimeYear.query.filter_by(rasp_key=rasp.key, date=start_date.strftime('%Y')).first().time])
+                year.append([start_date.strftime('%Y'), UsingTimeYear.query.filter_by(key=rasp.key, date=start_date.strftime('%Y')).first().time])
                 start_date= start_date + relativedelta(years=1)
         else:
             while start_date <= this_date:
-                year.append([start_date.strftime('%Y'), UsingTimeYear.query.filter_by(rasp_key=rasp.key, date=start_date.strftime('%Y')).first().time])
+                year.append([start_date.strftime('%Y'), UsingTimeYear.query.filter_by(key=rasp.key, date=start_date.strftime('%Y')).first().time])
                 start_date= start_date + relativedelta(years=1)
         return {"year": year}, 200
     elif int(parameters['month']) == 1:
@@ -73,11 +73,11 @@ def using_time():
         if start_date < rasp_date:
             start_date = rasp_date
             while start_date <= this_date:
-                month.append([start_date.strftime('%Y-%m'), UsingTimeMonth.query.filter_by(rasp_key=rasp.key, date=start_date.strftime('%Y-%m')).first().time])
+                month.append([start_date.strftime('%Y-%m'), UsingTimeMonth.query.filter_by(key=rasp.key, date=start_date.strftime('%Y-%m')).first().time])
                 start_date = start_date + relativedelta(months=1)
         else:
             while start_date <= this_date:
-                month.append([start_date.strftime('%Y-%m'), UsingTimeMonth.query.filter_by(rasp_key=rasp.key, date=start_date.strftime('%Y-%m')).first().time])
+                month.append([start_date.strftime('%Y-%m'), UsingTimeMonth.query.filter_by(key=rasp.key, date=start_date.strftime('%Y-%m')).first().time])
                 start_date= start_date + relativedelta(months=1)
         return {"month": month}, 200
 
@@ -87,11 +87,11 @@ def using_time():
         if start_date < rasp_date:
             start_date = rasp_date
             while start_date <= this_date:
-                day.append([start_date.strftime('%Y-%m-%d'), UsingTimeDay.query.filter_by(rasp_key=rasp.key, date=start_date.strftime('%Y-%m-%d')).first().time])
+                day.append([start_date.strftime('%Y-%m-%d'), UsingTimeDay.query.filter_by(key=rasp.key, date=start_date.strftime('%Y-%m-%d')).first().time])
                 start_date= start_date + relativedelta(days=1)
         else:
             while start_date <= this_date:
-                day.append([start_date.strftime('%Y-%m-%d'), UsingTimeDay.query.filter_by(rasp_key=rasp.key, date=start_date.strftime('%Y-%m-%d')).first().time])
+                day.append([start_date.strftime('%Y-%m-%d'), UsingTimeDay.query.filter_by(key=rasp.key, date=start_date.strftime('%Y-%m-%d')).first().time])
                 start_date= start_date + relativedelta(days=1)
         return {"day": day}, 200
     
@@ -105,7 +105,7 @@ def using_time_year(year):
     using_time = []
     for i in range(1, 13):
         date = year+"-"+"{:02d}".format(i)
-        using_time_month = UsingTimeMonth.query.filter_by(rasp_key=rasp.key, date=date).first()
+        using_time_month = UsingTimeMonth.query.filter_by(key=rasp.key, date=date).first()
         if using_time_month is not None:
             using_time.append({date: using_time_month.time})
         else:
@@ -118,7 +118,7 @@ def ranking():
     using_time_month = UsingTimeMonth.query.order_by(UsingTimeMonth.time.asc()).limit(10).all()
     ranking = []
     for u in using_time_month:
-        rasp = Raspberry.query.get(u.rasp_key)
+        rasp = Raspberry.query.get(u.key)
         ranking.append({"raspberry_id": rasp.id, "raspberry_group": rasp.group, "time": u.time})
     return {"ranking": ranking}, 200
 
@@ -130,6 +130,6 @@ def myranking():
     using_time_month = UsingTimeMonth.query.order_by(UsingTimeMonth.time.asc()).all()
     rank = 1
     for u in using_time_month:
-        if myrasp == u.rasp_key:
+        if myrasp == u.key:
             return {"rank": rank, "total":len(using_time_month)}, 200
         rank = rank+1

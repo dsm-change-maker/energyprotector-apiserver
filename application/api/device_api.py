@@ -14,8 +14,8 @@ sys.path.append(os.path.dirname(os.path.dirname(
     os.path.abspath(os.path.dirname(__file__)))))
 
 bp = Blueprint('device', __name__)
-SERVER_URL = '13.125.133.6'
-SERVER_PORT = 56548
+SERVER_URL = '3.35.25.172'
+SERVER_PORT = 58995
 
 @bp.route('/api/device', methods=['GET'])
 @jwt_required
@@ -134,21 +134,21 @@ def control_device():
                 unit.on_off = False
                 time = datetime.datetime.now() - unit.start
                 using_day = UsingTimeDay.query.filter_by(
-                    date=today.strftime('%Y-%m-%d'), rasp_key=get_jwt_identity()).first()
+                    date=today.strftime('%Y-%m-%d'), key=get_jwt_identity()).first()
                 if using_day is None:
-                    using_day = UsingTimeDay(rasp_key=get_jwt_identity(), time=0,
+                    using_day = UsingTimeDay(key=get_jwt_identity(), time=0,
                                              date=today.strftime('%Y-%m-%d'))
                     db.session.add(using_day)
                 using_month = UsingTimeMonth.query.filter_by(
                     date=today.strftime('%Y-%m'), key=key).first()
                 if using_month is None:
-                    using_month = UsingTimeMonth(rasp_key=get_jwt_identity(), time=0,
+                    using_month = UsingTimeMonth(key=get_jwt_identity(), time=0,
                                                  date=today.strftime('%Y-%m'))
                     db.session.add(using_month)
                 using_year = UsingTimeYear.query.filter_by(
-                    date=today.strftime('%Y'), rasp_key=get_jwt_identity()).first()
+                    date=today.strftime('%Y'), key=get_jwt_identity()).first()
                 if using_year is None:
-                    using_year = UsingTimeYear(rasp_key=get_jwt_identity(), time=0,
+                    using_year = UsingTimeYear(key=get_jwt_identity(), time=0,
                                                date=today.strftime('%Y'))
                     db.session.add(using_year)
                 using_day.time += time.seconds
